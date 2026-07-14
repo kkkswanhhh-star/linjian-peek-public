@@ -1,125 +1,137 @@
-# 掌心窗 Palm Window MCP · v0.1.8 Public Clean
+---
+title: 掌心窗 Hugging Face 版
+emoji: 🪟
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
 
-一个自部署的手机状态、截图与轻控制 MCP 工具。它由三部分组成：
+# 掌心窗 Hugging Face Spaces 一体版
 
-- `android/`：Android 手机端 App，负责在用户明确授权后上传轻量生活状态、执行截图/返回/主页/打开 App/点击/滑动/通知/闹钟等命令。
-- `server/`：零依赖 Python 后端，负责保存最近截图、命令队列、命令回传和手机生活状态。
-- `mcp/`：MCP 服务，把后端能力暴露给支持 MCP 的 AI 客户端。
+这是掌心窗 v0.1.8 的 **Hugging Face Spaces Docker 一体部署版**。
 
-公开版已做脱敏处理：不包含真实 Token、服务器地址、个人设备 ID 或私人文案。请自行部署、设置强随机密钥，并只连接自己的设备。
+它把原来 Render 需要分别部署的两个服务合到一个 Space 里：
 
-## 能做什么
+- 手机后端：`/health`、`/api/*`
+- MCP 服务：`/mcp`、`/sse`
 
-- **轻量状态**：电量、充电状态、网络、屏幕亮灭、当前 App、今日屏幕时间、解锁次数、Top App、城市/天气备注、权限状态。
-- **看见**：AI 端请求截图，手机端在授权服务运行时截图并上传。
-- **控制**：打开白名单 App、返回、主页、最近任务、点击、滑动。
-- **提醒**：发送系统通知、设置系统闹钟。
-- **主动提醒**：在手机本机根据规则弹通知，包括低电量、屏幕时长、喝水、休息眼睛、生理期临近/进行中。
-
-## 安全边界
-
-这些能力很敏感。公开版默认强调“用户自己部署、自己授权、自己设备使用”。
-
-- 不要把真实 `LINJIAN_TOKEN` 提交到仓库。
-- 不要把 MCP 服务公开给陌生人使用。
-- 截图、读屏、点击、滑动只应在本人明确知情和授权的设备上使用。
-- 生活状态层默认不截图，只上传轻量状态。
-- 建议对支付、聊天、钱包、验证码等敏感页面保持谨慎，不要默认自动截图或自动点击。
-- 支付、下单、删除、发送消息等高风险动作应始终由用户最终确认。
+这样用户不需要在 Render 上建两个 Web Service，也不需要处理 Render 的绑卡弹窗。Hugging Face Spaces 的免费 CPU Basic 可以用于测试，但免费硬件闲置后会睡眠，重启后本地临时数据可能丢失。
 
 ## 快速部署
 
-### 1. 后端 Server
+### 1. 新建 Space
 
-在 Render / VPS / 本机启动 `server/linjian_server.py`。
+打开 Hugging Face，创建一个新的 Space：
 
-环境变量示例：
+- Space name：随便取，例如 `palm-window`
+- SDK：选择 `Docker`
+- Hardware：保持默认 `CPU Basic / Free`
+- Visibility：建议先选 `Private` 或 `Protected`，熟悉后再决定是否公开
 
-```bash
-LINJIAN_TOKEN=请换成长随机密钥
-LINJIAN_KEEP=3
-PORT=8513
-```
+### 2. 上传本包文件
 
-Render 建议：
+把这个 ZIP 解压后，将里面所有文件上传到 Space 的 Files 页面。
 
-- Root Directory: `server`
-- Build Command: 留空或 `echo ok`
-- Start Command: `python linjian_server.py`
-- Env: `LINJIAN_TOKEN`
+也可以用 git 推送到 Space 仓库。
 
-### 2. MCP 服务
+### 3. 设置密钥和变量
 
-```bash
-cd mcp
-npm install
-npm start
-```
+进入 Space 的 **Settings → Variables and secrets**。
 
-环境变量示例：
-
-```bash
-LINJIAN_URL=https://你的后端地址.onrender.com
-LINJIAN_TOKEN=和后端完全相同的 token
-LINJIAN_DEFAULT_DEVICE=my-phone
-```
-
-Render 建议：
-
-- Root Directory: `mcp`
-- Build Command: `npm install`
-- Start Command: `npm start`
-- Env: `LINJIAN_URL`、`LINJIAN_TOKEN`、`LINJIAN_DEFAULT_DEVICE`
-
-### 3. Android APK
-
-GitHub Actions 会构建 Debug APK。也可以在支持 Android SDK 的环境中运行：
-
-```bash
-bash android/build.sh
-```
-
-构建输出：
+添加 Secret：
 
 ```text
-android/PalmWindow-v0.1.8.apk
+LINJIAN_TOKEN = 你自己生成的一串长密钥，建议 32 位以上
 ```
 
-安装后在 App 内填写：
+添加 Variable：
 
-- Server URL：你的后端地址
-- Token：后端同一串 `LINJIAN_TOKEN`
-- Device ID：默认 `my-phone`，也可以自定义
+```text
+LINJIAN_DEFAULT_DEVICE = my-phone
+LINJIAN_KEEP = 3
+```
 
-然后开启无障碍服务、截图权限、通知权限、使用情况访问权限。
+不要把 `LINJIAN_TOKEN` 写进代码、README、评论区或截图里。
 
-## MCP 工具
+### 4. 等待构建完成
 
-- `linjian_status`：检查后端在线状态。
-- `get_life_state`：读取轻量生活状态，默认不截图。
-- `get_phone_state`：读取最近手机状态。
-- `peek_screen`：请求新截图并等待返回。
-- `latest_screen`：读取服务器最近一次截图。
-- `list_known_apps`：列出预置 App 包名白名单。
-- `open_app`：打开指定 App 或包名。
-- `phone_home` / `phone_back` / `phone_recents`：系统导航。
-- `send_phone_command`：发送底层命令。
-- `send_notification`：发送系统通知。
-- `set_alarm`：设置系统闹钟。
+上传后 Hugging Face 会自动构建 Docker 镜像。构建完成后，打开你的 Space 地址：
 
-## v0.1.8 功能点
+```text
+https://你的用户名-你的Space名.hf.space/health
+```
 
-- Life State 生活状态层。
-- Active Reminder 主动提醒规则层。
-- 生理期提醒状态与本机提醒。
-- UI：设置 / 看见 / 控制 / 状态 / 日志 底部导航。
-- 命令回传与日志页。
+看到类似下面内容就说明后端活了：
 
-## 后续可以继续做
+```json
+{"ok": true, "service": "linjian-unified", "name": "掌心窗"}
+```
 
-- 截图诊断字段：`screenshot_ready`、`last_screenshot_at`、`last_screenshot_error`。
-- `peek_screen(delay_seconds=3)`：给用户切页面的延迟截图。
-- OCR 歌词兜底：音乐 App 歌词页截图后识别当前歌词。
-- 外卖/点餐参谋：只做选择辅助，付款和最终确认必须由用户完成。
-- 更细的隐私白名单/黑名单。
+MCP 健康检查地址：
 
+```text
+https://你的用户名-你的Space名.hf.space/mcp_health
+```
+
+ChatGPT / MCP 客户端连接地址：
+
+```text
+https://你的用户名-你的Space名.hf.space/mcp
+```
+
+旧 SSE 客户端连接地址：
+
+```text
+https://你的用户名-你的Space名.hf.space/sse
+```
+
+## 手机 App 怎么填
+
+Android 掌心窗 App 里填：
+
+```text
+Server URL = https://你的用户名-你的Space名.hf.space
+Token = 刚刚设置的 LINJIAN_TOKEN
+Device ID = my-phone
+```
+
+然后点启动/保存，确认无障碍权限、通知权限、截图权限按 App 指引开启。
+
+## 重要限制
+
+1. 免费 Space 会睡眠，第一次访问可能需要等它醒来。
+2. 这个版本默认把截图和状态存在容器本地目录里；Space 重启后，本地临时数据可能丢失。
+3. 不要共用别人的 Space、Token、Device ID。每个人都应该部署自己的后端。
+4. 如果手机 App 显示连不上，先打开 `/health` 看 Space 有没有醒。
+5. 如果 MCP 能连但手机没反应，检查手机 App 的 Server URL、Token、Device ID 是否和 Space 一致。
+
+## 路径说明
+
+| 路径 | 用途 |
+| --- | --- |
+| `/health` | 手机后端健康检查 |
+| `/api/poll` | 手机轮询命令 |
+| `/api/screenshot` | 手机上传截图 |
+| `/api/latest` | 读取最近截图 |
+| `/api/device/state` | 手机状态上传/读取 |
+| `/api/life_state` | 生活状态层 |
+| `/mcp` | Streamable HTTP MCP |
+| `/sse` | SSE MCP |
+| `/mcp_health` | MCP 服务健康检查 |
+
+## 本地测试（可选）
+
+```bash
+export LINJIAN_TOKEN="your-long-token"
+docker build -t palm-window-hf .
+docker run --rm -p 7860:7860 -e LINJIAN_TOKEN="$LINJIAN_TOKEN" palm-window-hf
+```
+
+然后打开：
+
+```text
+http://localhost:7860/health
+http://localhost:7860/mcp_health
+```

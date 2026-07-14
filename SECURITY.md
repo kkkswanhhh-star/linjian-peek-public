@@ -11,3 +11,8 @@ Recommended rules:
 5. Require user confirmation before any high-impact action such as payment, ordering, deletion, sending messages, or changing account settings.
 6. Turn off the Android service or revoke accessibility permission when not using it.
 
+
+
+## Hugging Face Spaces 版提醒
+
+请把 `LINJIAN_TOKEN` 放在 Space 的 Secret 里，不要写进 `README.md`、代码、公开截图或评论区。不要多人共用同一个 Space 和 Token。

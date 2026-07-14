@@ -3,14 +3,16 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 const PORT = Number(process.env.PORT || 8787);
-const LINJIAN_URL = (process.env.LINJIAN_URL || "").replace(/\/$/, "");
+const LINJIAN_URL = (process.env.LINJIAN_URL || "http://127.0.0.1:8513").replace(/\/$/, "");
+const LINJIAN_PROXY_TARGET = (process.env.LINJIAN_PROXY_TARGET || process.env.LINJIAN_INTERNAL_URL || "http://127.0.0.1:8513").replace(/\/$/, "");
 const LINJIAN_TOKEN = process.env.LINJIAN_TOKEN || "";
 const DEFAULT_DEVICE = process.env.LINJIAN_DEFAULT_DEVICE || "my-phone";
 
 function requireConfig() {
-  if (!LINJIAN_URL) throw new Error("Missing env LINJIAN_URL, for example https://linjian-peek.onrender.com");
+  if (!LINJIAN_URL) throw new Error("Missing env LINJIAN_URL, for example http://127.0.0.1:8513 or https://your-server.example");
   if (!LINJIAN_TOKEN) throw new Error("Missing env LINJIAN_TOKEN");
 }
 
@@ -150,9 +152,24 @@ function makeServer() {
 }
 
 const app = express();
+
+// Hugging Face Spaces only exposes one public port.
+// The Android app needs /api/* and /health from the Python phone server,
+// while ChatGPT/MCP needs /mcp and /sse from this Node server.
+// So we proxy phone-server routes to the internal Python process before parsing JSON.
+const phoneServerProxy = createProxyMiddleware({
+  target: LINJIAN_PROXY_TARGET,
+  changeOrigin: true,
+  ws: false,
+  proxyTimeout: 120000,
+  timeout: 120000,
+  pathRewrite: (_path, req) => req.originalUrl,
+});
+app.use(["/api", "/health"], phoneServerProxy);
+
 app.use(express.json({ limit: "32mb" }));
-app.get("/", (_req, res) => res.type("text/plain").send("掌心窗 unified MCP is running. Use /mcp for Streamable HTTP, or /sse for SSE."));
-app.get("/health", (_req, res) => res.json({ ok: true, service: "linjian-unified-mcp", version: "0.1.8", has_url: Boolean(LINJIAN_URL), has_token: Boolean(LINJIAN_TOKEN) }));
+app.get("/", (_req, res) => res.type("text/plain").send("掌心窗 Hugging Face Space is running. Phone server routes: /health and /api/*. MCP routes: /mcp or /sse. MCP health: /mcp_health."));
+app.get("/mcp_health", (_req, res) => res.json({ ok: true, service: "linjian-unified-mcp", version: "0.1.8-hf", linjian_url: LINJIAN_URL, proxy_target: LINJIAN_PROXY_TARGET, has_token: Boolean(LINJIAN_TOKEN) }));
 app.post("/mcp", async (req, res) => {
   try { const server = makeServer(); const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined }); res.on("close", () => transport.close()); await server.connect(transport); await transport.handleRequest(req, res, req.body); }
   catch (err) { console.error(err); if (!res.headersSent) res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: String(err?.message || err) }, id: null }); }
@@ -164,4 +181,4 @@ app.get("/sse", async (_req, res) => {
   catch (err) { console.error(err); if (!res.headersSent) res.status(500).end(String(err?.message || err)); }
 });
 app.post("/messages", async (req, res) => { const sessionId = req.query.sessionId; const transport = sseTransports.get(sessionId); if (!transport) return res.status(404).send("No SSE transport for sessionId"); await transport.handlePostMessage(req, res, req.body); });
-app.listen(PORT, "0.0.0.0", () => { console.log(`掌心窗 unified MCP listening on 0.0.0.0:${PORT}`); console.log(`LINJIAN_URL=${LINJIAN_URL || "<missing>"}`); });
+app.listen(PORT, "0.0.0.0", () => { console.log(`掌心窗 unified MCP listening on 0.0.0.0:${PORT}`); console.log(`LINJIAN_URL=${LINJIAN_URL || "<missing>"}`); console.log(`LINJIAN_PROXY_TARGET=${LINJIAN_PROXY_TARGET || "<missing>"}`); });
