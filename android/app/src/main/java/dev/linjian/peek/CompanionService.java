@@ -240,12 +240,12 @@ public class CompanionService extends Service {
                     String expectedPkg = AppPrefs.packageForApp(ctx, expect);
                     if (expectedPkg.length() == 0 && AppPrefs.isPackageLike(expect)) expectedPkg = expect;
                     String current = ScreenshotService.currentPackage();
-                    boolean match = current != null && current.equals(expectedPkg);
+                    boolean expectMatch = current != null && current.equals(expectedPkg);
                     r.put("expect_app", expect);
                     r.put("expected_package", expectedPkg);
                     r.put("current_package", current == null ? "" : current);
-                    r.put("expect_ok", match);
-                    if (!match) r.put("ok", false);
+                    r.put("expect_ok", expectMatch);
+                    if (!expectMatch) r.put("ok", false);
                 }
                 boolean ok = r.optBoolean("ok", false);
                 stepReport.put("index", i + 1); stepReport.put("label", label); stepReport.put("action", action); stepReport.put("ok", ok); stepReport.put("detail", r);
