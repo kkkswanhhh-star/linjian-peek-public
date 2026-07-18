@@ -35,12 +35,9 @@ public class HomeMode {
             if (!p.getBoolean(AppPrefs.KEY_HOME_MODE_ENABLED, false)) return "回家模式：关闭";
             String target = p.getString(AppPrefs.KEY_HOME_TARGET_PACKAGE, "").trim();
             return "回家模式：开启" + (p.getBoolean(AppPrefs.KEY_HOME_MODE_FORCE, false) ? "（自动打开）" : "（只弹窗）") +
-                    "
-盯住：" + p.getString(AppPrefs.KEY_HOME_WATCH_PACKAGES, "com.ss.android.ugc.aweme,com.xingin.xhs") +
-                    "
-超过：" + p.getInt(AppPrefs.KEY_HOME_THRESHOLD_MIN, 10) + " 分钟  冷却：" + p.getInt(AppPrefs.KEY_HOME_COOLDOWN_MIN, 5) + " 分钟" +
-                    "
-目标 App：" + (target.length() == 0 ? "未设置" : target);
+                    "\n盯住：" + p.getString(AppPrefs.KEY_HOME_WATCH_PACKAGES, "com.ss.android.ugc.aweme,com.xingin.xhs") +
+                    "\n超过：" + p.getInt(AppPrefs.KEY_HOME_THRESHOLD_MIN, 10) + " 分钟  冷却：" + p.getInt(AppPrefs.KEY_HOME_COOLDOWN_MIN, 5) + " 分钟" +
+                    "\n目标 App：" + (target.length() == 0 ? "未设置" : target);
         } catch (Exception e) { return "回家模式读取失败：" + ScreenshotService.shortMsg(e); }
     }
 
