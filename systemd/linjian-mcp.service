@@ -1,0 +1,18 @@
+[Unit]
+Description=Linjian MCP server (Node.js)
+After=network-online.target linjian-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/.openclaw/workspace/linjian-peek-public/mcp
+EnvironmentFile=/home/ubuntu/.openclaw/workspace/linjian-peek-public/mcp/.env
+ExecStart=/usr/bin/node /home/ubuntu/.openclaw/workspace/linjian-peek-public/mcp/server.js
+Restart=always
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
