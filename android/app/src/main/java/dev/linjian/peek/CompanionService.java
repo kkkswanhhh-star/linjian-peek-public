@@ -58,7 +58,7 @@ public class CompanionService extends Service {
             DebugState.append(this, "服务启动失败：服务器地址或 Token 为空");
             stopSelf(); return START_NOT_STICKY;
         }
-        DebugState.append(this, "掌心窗 v0.2.3 服务已启动，目标：" + serverUrl);
+        DebugState.append(this, "掌心窗 v0.3.4 服务已启动，目标：" + serverUrl);
         if (!running) { running = true; startPolling(); } else DebugState.append(this, "服务已在运行，继续轮询");
         return START_STICKY;
     }
@@ -136,12 +136,24 @@ public class CompanionService extends Service {
                 try { reportCommand(ctx, serverUrl, token, id, true, result); uploadState(serverUrl, token, ctx); } catch (Exception ignored) { }
                 return;
             }
+            if (isAppGateAction(action)) {
+                JSONObject rr = AppGate.handleCommand(ctx, cmd);
+                boolean ok = rr.optBoolean("ok", false);
+                String result = rr.optString("result", rr.toString());
+                DebugState.append(ctx, "执行应用门禁命令 " + action + "：" + result);
+                try { reportCommand(ctx, serverUrl, token, id, ok, result); uploadState(serverUrl, token, ctx); } catch (Exception ignored) { }
+                return;
+            }
             if ("run_sequence".equals(action)) {
                 executeSequence(ctx, id, cmd, serverUrl, token);
                 return;
             }
             executeCommand(ctx, id, action, app, pkg, x, y, x1, y1, x2, y2, duration, hour, minute, title, message, vibrate, serverUrl, token, skipUi, targetText, inputText, match, index, append);
         } catch (Exception e) { DebugState.append(ctx, "命令解析异常：" + ScreenshotService.shortMsg(e)); }
+    }
+
+    private static boolean isAppGateAction(String action) {
+        return "lock_app".equals(action) || "unlock_app".equals(action) || "temporary_unlock_app".equals(action) || "extend_lock".equals(action) || "deny_unlock_request".equals(action) || "get_lock_state".equals(action) || "set_emergency_passphrase".equals(action) || "add_locked_app".equals(action) || "remove_locked_app".equals(action) || "list_lockable_apps".equals(action);
     }
 
     private static void executeCommand(Context ctx, String id, String action, String app, String pkg, float x, float y, float x1, float y1, float x2, float y2, long duration, int hour, int minute, String title, String message, boolean vibrate, String serverUrl, String token) {
@@ -167,6 +179,7 @@ public class CompanionService extends Service {
             ScreenshotService svc = ScreenshotService.getInstance();
             if ("wait".equals(action)) { ok = true; result = "wait";
             } else if ("get_life_state".equals(action)) { ok = true; result = LifeState.collect(ctx).toString();
+            } else if (isAppGateAction(action)) { JSONObject rr = AppGate.handleCommand(ctx, new JSONObject().put("action", action).put("app", app).put("package", pkg)); ok = rr.optBoolean("ok", false); result = rr.optString("result", rr.toString());
             } else if ("get_screen_nodes".equals(action)) {
                 if (svc != null) { svc.refreshScreenModel(); ok = true; result = svc.getScreenNodesJsonNow(); }
                 else result = "accessibility service not ready";

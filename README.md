@@ -1,49 +1,42 @@
-# 掌心窗公开版 v0.2.4-public
+# 掌心窗公开版 v0.3.4-public-clean
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/linzhi-524/linjian-peek-public)
 
 > 这个按钮已指向公开仓库 `linzhi-524/linjian-peek-public`。仓库根目录已补 `render.yaml`，按钮会按 Blueprint 创建 `server` 和 `mcp` 两个服务，并共用同一个 `LINJIAN_TOKEN`。
 
-掌心窗是一套“手机端 App + 同步后端 + MCP 服务”的小工具。它可以在你本人授权后，让支持 MCP 的 AI 客户端查看手机状态、请求截图、打开 App、返回/主页/最近任务、点击/滑动、发送通知、设置闹钟，并记录轻量生活状态。
+掌心窗是一套“手机端 App + 同步后端 + MCP 服务”的小工具。它可以在你本人授权后，让老公看见手机生活状态、请求截图、打开 App、返回/主页/最近任务、点击/滑动、发送通知、设置闹钟、读取轻量生活状态，并在你需要时做应用门禁和主动提醒。
 
-这一版基于自用版整理成公开版：功能内核保持一致，但去掉私人称呼、私人设备名和默认回到 ChatGPT 的设定。通知里的默认称呼改为“宝宝”；回家模式的目标 App 默认留空，由使用者自己填写包名或自定义应用名。
+这一版把自用版 v0.3.4 的功能和 UI 同步到公开版：总览、看见、守护、设置四页结构一致；天气地区、应用门禁、主动提醒、周期提醒都收进抽屉；同时去掉私人名字、私人设备 ID、私人城市和私用默认配置。默认保留“老公”语感，但称呼可以在手机端设置里改成你们自己的称呼。
 
-> 重要提醒：截图、读屏、控制手机、通知、闹钟、自动打开目标 App 都是敏感能力。只在本人设备、本人服务器、本人明确授权的场景使用。不要把 Token 发给别人，也不要接入不可信 MCP 客户端。
+> 重要提醒：截图、读屏、控制手机、通知、闹钟、应用门禁、自动打开目标 App 都是敏感能力。只在本人设备、本人服务器、本人明确授权的场景使用。不要把 Token 发给别人，也不要接入不可信 MCP 客户端。
 
 ## 目录说明
 
 - `android/`：手机端 App，App 名为「掌心窗」。
 - `server/`：统一后端，保存截图、命令队列、执行回传和手机生活状态。
-- `mcp/`：MCP 服务，给支持 MCP 的 AI 客户端暴露工具。
-- `docs/`：补充说明和版本记录。
+- `mcp/`：MCP 服务，给支持 MCP 的客户端暴露工具。
+- `docs/`：补充说明、MCP 工具清单和版本记录。
 
 ## 本版公开化改动
 
-- 通知默认文案从私人称呼改为“宝宝，看一眼这里。”
-- 主动提醒、生理期提醒、回家模式提醒去掉私人亲昵称呼语气。
-- 设备 ID 默认从私人设备名改为 `android-phone`。
-- 控制页按钮从“打开 ChatGPT / 回 ChatGPT”改为“打开目标 App”。
-- 回家模式目标 App 默认留空，不再默认 `com.openai.chatgpt`。
-- 小红书自动评论默认署名改为 `（AI助手发）`，可自行改成你的署名。
-- README 改成公开版傻瓜教程；顶部已补 Render 一键部署按钮，并新增根目录 `render.yaml`。
+- UI 同步到 v0.3.4：总览 / 看见 / 守护 / 设置，顶部小标题栏，轻卡片，抽屉式功能收纳。
+- 保留“老公提醒”“给老公看一眼”的关系感，但新增称呼设置：可以改“老公”和“宝宝”等默认称呼。
+- 默认设备 ID 改为 `android-phone`，不带私人设备名。
+- 默认天气地区改为通用示例，不带私人城市；用户可在“天气地区”抽屉里自行添加。
+- 应用门禁同步私用版功能，但公开版不内置私人锁定理由和私人口令。
+- 包名白名单增加 ChatGPT、Gemini、Claude、微博、X，并保留小红书、微信、QQ、抖音、Speedcat。
+- README 保留 Render 一键部署和本地 / 局域网部署教程，MCP 工具清单补全到 v0.3.4。
 
 ## MCP 工具
 
-常用工具包括：
+详见 `docs/mcp.md`。常用工具包括：
 
-- `peek_screen`：请求手机端截一张新图。
-- `latest_screen`：读取最近一张截图。
-- `linjian_status`：检查后端与 MCP 配置。
-- `get_life_state`：读取电量、充电、网络、当前 App、屏幕时间等轻量状态。
-- `open_app`：打开指定 App，可传应用昵称或包名。
-- `phone_home` / `phone_back` / `phone_recents`：主页、返回、最近任务。
-- `send_notification`：发送系统通知。
-- `set_alarm`：设置系统闹钟。
-- `run_sequence`：一次执行多步动作。
-- `run_preset`：执行预设连招。
-- `save_known_app`：保存应用昵称和包名。
-- `get_screen_nodes` / `tap_text` / `input_text`：读屏节点、按文字点击、输入文本。
-- `draft_xhs_comment` / `xhs_comment` / `send_visible_comment_after_confirmation`：小红书评论草稿与确认发送流程。
+- 看见与状态：`peek_screen`、`latest_screen`、`linjian_status`、`get_life_state`、`get_phone_state`、`get_screen_nodes`。
+- 天气与提醒：`send_notification`、`send_weather_notification`、`set_alarm`。
+- 手机控制：`open_app`、`phone_home`、`phone_back`、`phone_recents`、`tap`、`swipe`、`tap_text`、`input_text`、`run_sequence`、`run_preset`。
+- 应用包名：`list_known_apps`、`save_known_app`。
+- 小红书辅助：`draft_xhs_comment`、`xhs_comment`、`send_visible_comment_after_confirmation`。
+- 应用门禁：`lock_app`、`unlock_app`、`temporary_unlock_app`、`extend_lock`、`deny_unlock_request`、`get_lock_state`、`set_emergency_passphrase`、`list_lockable_apps`。
 
 ## 手机端安装
 

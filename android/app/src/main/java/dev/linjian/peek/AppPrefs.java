@@ -17,6 +17,8 @@ public class AppPrefs {
     public static final String KEY_INTERVAL = "poll_interval_ms";
     public static final String KEY_CITY = "life_city";
     public static final String KEY_WEATHER_NOTE = "life_weather_note";
+    public static final String KEY_WEATHER_LOCATIONS = "weather_locations_lines";
+    public static final String KEY_THEME = "ui_theme";
     public static final String KEY_ACTIVE_REMINDERS = "active_reminders_enabled";
     public static final String KEY_RULE_BATTERY = "rule_battery_enabled";
     public static final String KEY_BATTERY_THRESHOLD = "rule_battery_threshold";
@@ -31,6 +33,8 @@ public class AppPrefs {
     public static final String KEY_CYCLE_LENGTH = "cycle_length_days";
     public static final String KEY_PERIOD_LENGTH = "cycle_period_length_days";
     public static final String KEY_CYCLE_REMIND_BEFORE = "cycle_remind_before_days";
+    public static final String KEY_USER_NICKNAME = "user_nickname";
+    public static final String KEY_PARTNER_NICKNAME = "partner_nickname";
 
     public static final String KEY_FOREGROUND_POPUP = "foreground_popup_enabled";
     public static final String KEY_CUSTOM_APPS = "custom_apps_lines";
@@ -45,6 +49,14 @@ public class AppPrefs {
     public static String server(Context ctx) { return get(ctx).getString(KEY_SERVER, ""); }
     public static String token(Context ctx) { return get(ctx).getString(KEY_TOKEN, ""); }
     public static String device(Context ctx) { return get(ctx).getString(KEY_DEVICE, "android-phone"); }
+    public static String userName(Context ctx) {
+        String v = get(ctx).getString(KEY_USER_NICKNAME, "宝宝");
+        return (v == null || v.trim().isEmpty()) ? "宝宝" : v.trim();
+    }
+    public static String partnerName(Context ctx) {
+        String v = get(ctx).getString(KEY_PARTNER_NICKNAME, "老公");
+        return (v == null || v.trim().isEmpty()) ? "老公" : v.trim();
+    }
     public static int interval(Context ctx) { return Math.max(700, get(ctx).getInt(KEY_INTERVAL, 1500)); }
 
     public static Map<String, String> defaultApps() {
@@ -54,6 +66,10 @@ public class AppPrefs {
         apps.put("QQ", "com.tencent.mobileqq");
         apps.put("抖音", "com.ss.android.ugc.aweme");
         apps.put("ChatGPT", "com.openai.chatgpt");
+        apps.put("Gemini", "com.google.android.apps.bard");
+        apps.put("Claude", "com.anthropic.claude");
+        apps.put("微博", "com.sina.weibo");
+        apps.put("X", "com.twitter.android");
         apps.put("Speedcat", "");
         return apps;
     }
@@ -118,6 +134,10 @@ public class AppPrefs {
             case "qq": def = "com.tencent.mobileqq"; break;
             case "douyin": case "抖音": def = "com.ss.android.ugc.aweme"; break;
             case "chatgpt": def = "com.openai.chatgpt"; break;
+            case "gemini": case "bard": def = "com.google.android.apps.bard"; break;
+            case "claude": def = "com.anthropic.claude"; break;
+            case "weibo": case "微博": def = "com.sina.weibo"; break;
+            case "x": case "twitter": def = "com.twitter.android"; break;
             case "speedcat": def = get(ctx).getString("pkg_speedcat", ""); break;
             default: def = "";
         }

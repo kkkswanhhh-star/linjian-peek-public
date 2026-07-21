@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""掌心窗 v0.2.4-public unified server.
+"""掌心窗 v0.3.4 unified server.
 
 零依赖标准库版，负责：
 1. 给手机端下发 peek / open_app / back / home / recents / tap / swipe / set_alarm / send_notification 命令；
@@ -23,7 +23,7 @@ from urllib.parse import parse_qs, urlparse
 DEFAULT_PORT = 8513
 DEFAULT_KEEP = 3
 MAX_UPLOAD_BYTES = 24 * 1024 * 1024
-VERSION = "0.2.4-public"
+VERSION = "0.3.4-public"
 DEFAULT_DEVICE = os.environ.get("LINJIAN_DEFAULT_DEVICE", "android-phone")
 
 ERR_BAD_TOKEN = "LINJIAN_ERR_BAD_TOKEN"
@@ -38,10 +38,14 @@ KNOWN_APPS = {
     "QQ": "com.tencent.mobileqq", "qq": "com.tencent.mobileqq",
     "抖音": "com.ss.android.ugc.aweme", "douyin": "com.ss.android.ugc.aweme",
     "ChatGPT": "com.openai.chatgpt", "chatgpt": "com.openai.chatgpt",
+    "Gemini": "com.google.android.apps.bard", "gemini": "com.google.android.apps.bard", "bard": "com.google.android.apps.bard",
+    "Claude": "com.anthropic.claude", "claude": "com.anthropic.claude",
+    "微博": "com.sina.weibo", "weibo": "com.sina.weibo",
+    "X": "com.twitter.android", "x": "com.twitter.android", "Twitter": "com.twitter.android", "twitter": "com.twitter.android",
     "Speedcat": "", "speedcat": "",
 }
 SENSITIVE_PACKAGES = {"com.eg.android.AlipayGphone", "com.tencent.mm.plugin.wallet"}
-ALLOWED_ACTIONS = {"noop", "peek", "open_app", "home", "back", "recents", "tap", "swipe", "set_alarm", "send_notification", "run_sequence", "save_known_app", "get_screen_nodes", "tap_text", "input_text"}
+ALLOWED_ACTIONS = {"noop", "peek", "open_app", "home", "back", "recents", "tap", "swipe", "set_alarm", "send_notification", "run_sequence", "save_known_app", "get_screen_nodes", "tap_text", "input_text", "lock_app", "unlock_app", "temporary_unlock_app", "extend_lock", "deny_unlock_request", "get_lock_state", "set_emergency_passphrase", "add_locked_app", "remove_locked_app", "list_lockable_apps"}
 
 
 def load_dotenv(path: Path) -> None:
@@ -74,6 +78,7 @@ class State:
         self.command_history: dict[str, dict] = {}
         self.commands_lock = Lock()
         self.device_states: dict[str, dict] = {}
+        self.unlock_requests: list[dict] = []
 
     def latest_shot(self) -> Path | None:
         shots = sorted(self.shots_dir.glob("peek_*"), key=lambda p: p.stat().st_mtime)
@@ -186,6 +191,9 @@ class Handler(BaseHTTPRequestHandler):
             with self.state.commands_lock:
                 found = self.state.command_history.get(cid) or next((c for c in self.state.commands if c.get("id") == cid), None)
             self._json(200, {"ok": bool(found), "command": found}); return
+        if path == "/api/appgate/unlock_requests":
+            if not self._require_token(): return
+            self._json(200, {"ok": True, "requests": self.state.unlock_requests[-50:]}); return
         if path == "/api/known_apps":
             self._json(200, {"ok": True, "apps": KNOWN_APPS}); return
         self._json(404, {"ok": False, "error": ERR_BAD_METHOD})
@@ -220,6 +228,12 @@ class Handler(BaseHTTPRequestHandler):
                     cmd["result"] = data.get("result", "")
                     cmd["report"] = data
             self._json(200, {"ok": True, "report": data, "command": self.state.command_history.get(cid)}); return
+        if path == "/api/appgate/unlock_request":
+            if not self._require_token(): return
+            data = self._read_json(); data.setdefault("created_at", now_iso())
+            self.state.unlock_requests.append(data)
+            self.state.unlock_requests = self.state.unlock_requests[-50:]
+            self._json(200, {"ok": True, "request": data, "count": len(self.state.unlock_requests)}); return
         if path == "/api/screenshot":
             if not self._require_token(): return
             self._handle_screenshot(); return

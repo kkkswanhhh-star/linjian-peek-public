@@ -42,13 +42,9 @@ public class ReminderActivity extends Activity {
         root.addView(msgView, mp);
 
         Button home = new Button(this);
-        home.setText("打开目标 App");
+        home.setText("回老公这儿");
         home.setTextSize(16);
-        home.setOnClickListener(v -> {
-            String target = AppPrefs.get(this).getString(AppPrefs.KEY_HOME_TARGET_PACKAGE, "").trim();
-            if (AppPrefs.isPackageLike(target)) CompanionService.openPackageResult(this, target);
-            finish();
-        });
+        home.setOnClickListener(v -> { CompanionService.openPackageResult(this, AppPrefs.packageForApp(this, "ChatGPT")); finish(); });
         root.addView(home, new LinearLayout.LayoutParams(-1, dp(48)));
 
         Button later = new Button(this);

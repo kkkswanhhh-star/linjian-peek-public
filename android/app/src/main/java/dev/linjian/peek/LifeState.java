@@ -61,7 +61,7 @@ public class LifeState {
             SharedPreferencesCompat prefs = new SharedPreferencesCompat(ctx);
 
             state.put("device_id", AppPrefs.device(ctx));
-            state.put("life_state_version", "0.2.3");
+            state.put("life_state_version", "0.3.4");
             state.put("local_time", formatLocal(now, "HH:mm"));
             state.put("local_date", formatLocal(now, "yyyy-MM-dd"));
             state.put("timezone", TimeZone.getDefault().getID());
@@ -82,10 +82,15 @@ public class LifeState {
             state.put("top_apps_today", usage.topApps);
             state.put("city", prefs.city());
             state.put("weather_note", prefs.weatherNote());
+            JSONObject weatherState = WeatherState.collect(ctx);
+            state.put("weather_state", weatherState);
+            state.put("weather_locations", weatherState.optJSONArray("locations"));
+            state.put("current_weather_location", weatherState.optJSONObject("current"));
             state.put("screen_text", ScreenshotService.screenText());
             state.put("active_reminders", ActiveReminder.config(ctx));
             state.put("home_mode", HomeMode.config(ctx));
             state.put("known_apps", AppPrefs.knownAppsJson(ctx));
+            state.put("app_gate", AppGate.config(ctx));
             state.put("cycle_state", CycleState.collect(ctx));
             state.put("summary", makeSummary(batteryPercent, charging, currentApp, usage.screenTimeMinutes, usage.unlockCount, usageReady));
         } catch (Exception e) {
@@ -98,7 +103,7 @@ public class LifeState {
         try {
             JSONObject s = collect(ctx);
             StringBuilder sb = new StringBuilder();
-            sb.append("生活状态层 v0.2.1\n");
+            sb.append("生活状态层 v0.3.4\n");
             sb.append("时间：").append(s.optString("local_time", "-")).append("  ").append(s.optString("local_date", "-")).append("\n");
             sb.append("电量：").append(s.optInt("battery_percent", -1)).append("%  ").append(s.optBoolean("charging") ? "充电中" : "未充电").append("\n");
             sb.append("网络：").append(s.optString("network_type", "-")).append("  屏幕：").append(s.optBoolean("screen_on") ? "亮" : "灭").append("\n");
@@ -108,9 +113,11 @@ public class LifeState {
             String city = s.optString("city", "");
             String weather = s.optString("weather_note", "");
             if (!city.isEmpty() || !weather.isEmpty()) sb.append("城市/天气：").append(city).append(city.isEmpty() || weather.isEmpty() ? "" : " · ").append(weather).append("\n");
+            sb.append("\n").append(WeatherState.pretty(ctx));
             sb.append("\n").append(s.optString("summary", ""));
             sb.append("\n\n").append(ActiveReminder.pretty(ctx));
             sb.append("\n\n").append(HomeMode.pretty(ctx));
+            sb.append("\n\n").append(AppGate.pretty(ctx));
             sb.append("\n\n可打开 App：\n").append(AppPrefs.knownAppsText(ctx));
             sb.append("\n\n").append(CycleState.pretty(ctx));
             return sb.toString();
