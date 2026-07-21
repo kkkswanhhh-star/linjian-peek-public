@@ -3,10 +3,21 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
+import { readFileSync } from "node:fs";
 
 const PORT = Number(process.env.PORT || 8787);
 const LINJIAN_URL = (process.env.LINJIAN_URL || "").replace(/\/$/, "");
-const LINJIAN_TOKEN = process.env.LINJIAN_TOKEN || "";
+const LINJIAN_TOKEN = (() => {
+  const envTok = process.env.LINJIAN_TOKEN || "";
+  const file = process.env.LINJIAN_TOKEN_FILE;
+  if (file) {
+    try {
+      const v = readFileSync(file, "utf8").trim();
+      if (v) return v;
+    } catch (_) {}
+  }
+  return envTok;
+})();
 const DEFAULT_DEVICE = process.env.LINJIAN_DEFAULT_DEVICE || "android-phone";
 
 function requireConfig() {
